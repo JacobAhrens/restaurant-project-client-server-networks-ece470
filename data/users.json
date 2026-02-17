@@ -1,4 +1,0 @@
-[
-  {"userID":"manager1","name":"Manager One","role":"MANAGER","password":"pass123"},
-  {"userID":"server1","name":"Server One","role":"SERVER","password":"pass123"}
-]

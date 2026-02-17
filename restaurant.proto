@@ -1,0 +1,60 @@
+syntax = "proto3";
+package restaurant;
+
+enum Role { ROLE_UNSPECIFIED = 0; MANAGER = 1; SERVER = 2; }
+enum MenuCategoryName { CAT_UNSPECIFIED = 0; STARTERS = 1; MAINS = 2; DESSERTS = 3; DRINKS = 4; }
+enum OrderType { ORDER_UNSPECIFIED = 0; DINE_IN = 1; TAKE_OUT = 2; }
+
+service AuthService {
+  rpc Authenticate(AuthRequest) returns (AuthResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+service MenuService {
+  rpc GetMenu(MenuGetRequest) returns (MenuGetResponse);
+  rpc UpdateMenu(MenuUpdateRequest) returns (MenuUpdateResponse);
+}
+
+service OrderService {
+  rpc SubmitOrder(OrderSubmitRequest) returns (OrderSubmitResponse);
+}
+
+message AuthRequest { string userID = 1; string password = 2; }
+message AuthResponse { string authToken = 1; Role role = 2; }
+
+message LogoutRequest {}
+message LogoutResponse { bool ok = 1; }
+
+message MenuGetRequest {}
+message MenuGetResponse { Menu menu = 1; }
+
+message MenuUpdateRequest {
+  string operation = 1; // ADD, UPDATE, DELETE
+  MenuCategoryName category = 2;
+  MenuItem item = 3;
+}
+message MenuUpdateResponse { bool ok = 1; string error = 2; }
+
+message Menu { repeated MenuCategory categories = 1; }
+message MenuCategory { MenuCategoryName name = 1; repeated MenuItem items = 2; }
+message MenuItem { string itemID = 1; string name = 2; int64 priceCents = 3; }
+
+message DineInInfo { int32 table = 1; int32 guestCount = 2; }
+message TakeOutInfo { string customerName = 1; }
+
+message OrderLine { string itemID = 1; int32 qty = 2; }
+
+message OrderSubmitRequest {
+  OrderType type = 1;
+  string requestId = 2;
+  oneof order_info {
+    DineInInfo dineIn = 3;
+    TakeOutInfo takeOut = 4;
+  }
+  repeated OrderLine lines = 5;
+}
+
+message BillLine { string itemID = 1; int32 qty = 2; int64 lineTotalCents = 3; }
+message Bill { repeated BillLine lines = 1; int64 subtotalCents = 2; }
+
+message OrderSubmitResponse { string orderID = 1; Bill bill = 2; }

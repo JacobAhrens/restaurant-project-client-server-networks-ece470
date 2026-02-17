@@ -1,0 +1,24 @@
+# ---- Runtime / generated data ----
+data/
+data/**
+
+# ---- Python noise ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ---- gRPC generated (optional – keep if you want these committed) ----
+# *_pb2.py
+# *_pb2_grpc.py
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+
+# ---- OS / editor junk ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

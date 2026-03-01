@@ -24,19 +24,21 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10restaurant.proto\x12\nrestaurant\"/\n\x0b\x41uthRequest\x12\x0e\n\x06userID\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"A\n\x0c\x41uthResponse\x12\x11\n\tauthToken\x18\x01 \x01(\t\x12\x1e\n\x04role\x18\x02 \x01(\x0e\x32\x10.restaurant.Role\"\x0f\n\rLogoutRequest\"\x1c\n\x0eLogoutResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"\x10\n\x0eMenuGetRequest\"1\n\x0fMenuGetResponse\x12\x1e\n\x04menu\x18\x01 \x01(\x0b\x32\x10.restaurant.Menu\"z\n\x11MenuUpdateRequest\x12\x11\n\toperation\x18\x01 \x01(\t\x12.\n\x08\x63\x61tegory\x18\x02 \x01(\x0e\x32\x1c.restaurant.MenuCategoryName\x12\"\n\x04item\x18\x03 \x01(\x0b\x32\x14.restaurant.MenuItem\"/\n\x12MenuUpdateResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"4\n\x04Menu\x12,\n\ncategories\x18\x01 \x03(\x0b\x32\x18.restaurant.MenuCategory\"_\n\x0cMenuCategory\x12*\n\x04name\x18\x01 \x01(\x0e\x32\x1c.restaurant.MenuCategoryName\x12#\n\x05items\x18\x02 \x03(\x0b\x32\x14.restaurant.MenuItem\"<\n\x08MenuItem\x12\x0e\n\x06itemID\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\npriceCents\x18\x03 \x01(\x03\"/\n\nDineInInfo\x12\r\n\x05table\x18\x01 \x01(\x05\x12\x12\n\nguestCount\x18\x02 \x01(\x05\"#\n\x0bTakeOutInfo\x12\x14\n\x0c\x63ustomerName\x18\x01 \x01(\t\"(\n\tOrderLine\x12\x0e\n\x06itemID\x18\x01 \x01(\t\x12\x0b\n\x03qty\x18\x02 \x01(\x05\"\xd6\x01\n\x12OrderSubmitRequest\x12#\n\x04type\x18\x01 \x01(\x0e\x32\x15.restaurant.OrderType\x12\x11\n\trequestId\x18\x02 \x01(\t\x12(\n\x06\x64ineIn\x18\x03 \x01(\x0b\x32\x16.restaurant.DineInInfoH\x00\x12*\n\x07takeOut\x18\x04 \x01(\x0b\x32\x17.restaurant.TakeOutInfoH\x00\x12$\n\x05lines\x18\x05 \x03(\x0b\x32\x15.restaurant.OrderLineB\x0c\n\norder_info\"?\n\x08\x42illLine\x12\x0e\n\x06itemID\x18\x01 \x01(\t\x12\x0b\n\x03qty\x18\x02 \x01(\x05\x12\x16\n\x0elineTotalCents\x18\x03 \x01(\x03\"B\n\x04\x42ill\x12#\n\x05lines\x18\x01 \x03(\x0b\x32\x14.restaurant.BillLine\x12\x15\n\rsubtotalCents\x18\x02 \x01(\x03\"F\n\x13OrderSubmitResponse\x12\x0f\n\x07orderID\x18\x01 \x01(\t\x12\x1e\n\x04\x62ill\x18\x02 \x01(\x0b\x32\x10.restaurant.Bill*5\n\x04Role\x12\x14\n\x10ROLE_UNSPECIFIED\x10\x00\x12\x0b\n\x07MANAGER\x10\x01\x12\n\n\x06SERVER\x10\x02*Z\n\x10MenuCategoryName\x12\x13\n\x0f\x43\x41T_UNSPECIFIED\x10\x00\x12\x0c\n\x08STARTERS\x10\x01\x12\t\n\x05MAINS\x10\x02\x12\x0c\n\x08\x44\x45SSERTS\x10\x03\x12\n\n\x06\x44RINKS\x10\x04*=\n\tOrderType\x12\x15\n\x11ORDER_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x44INE_IN\x10\x01\x12\x0c\n\x08TAKE_OUT\x10\x02\x32\x91\x01\n\x0b\x41uthService\x12\x41\n\x0c\x41uthenticate\x12\x17.restaurant.AuthRequest\x1a\x18.restaurant.AuthResponse\x12?\n\x06Logout\x12\x19.restaurant.LogoutRequest\x1a\x1a.restaurant.LogoutResponse2\x9e\x01\n\x0bMenuService\x12\x42\n\x07GetMenu\x12\x1a.restaurant.MenuGetRequest\x1a\x1b.restaurant.MenuGetResponse\x12K\n\nUpdateMenu\x12\x1d.restaurant.MenuUpdateRequest\x1a\x1e.restaurant.MenuUpdateResponse2^\n\x0cOrderService\x12N\n\x0bSubmitOrder\x12\x1e.restaurant.OrderSubmitRequest\x1a\x1f.restaurant.OrderSubmitResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10restaurant.proto\x12\nrestaurant\"/\n\x0b\x41uthRequest\x12\x0e\n\x06userID\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"A\n\x0c\x41uthResponse\x12\x11\n\tauthToken\x18\x01 \x01(\t\x12\x1e\n\x04role\x18\x02 \x01(\x0e\x32\x10.restaurant.Role\"\x0f\n\rLogoutRequest\"\x1c\n\x0eLogoutResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"\x10\n\x0eMenuGetRequest\"1\n\x0fMenuGetResponse\x12\x1e\n\x04menu\x18\x01 \x01(\x0b\x32\x10.restaurant.Menu\"z\n\x11MenuUpdateRequest\x12\x11\n\toperation\x18\x01 \x01(\t\x12.\n\x08\x63\x61tegory\x18\x02 \x01(\x0e\x32\x1c.restaurant.MenuCategoryName\x12\"\n\x04item\x18\x03 \x01(\x0b\x32\x14.restaurant.MenuItem\"/\n\x12MenuUpdateResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"4\n\x04Menu\x12,\n\ncategories\x18\x01 \x03(\x0b\x32\x18.restaurant.MenuCategory\"_\n\x0cMenuCategory\x12*\n\x04name\x18\x01 \x01(\x0e\x32\x1c.restaurant.MenuCategoryName\x12#\n\x05items\x18\x02 \x03(\x0b\x32\x14.restaurant.MenuItem\"<\n\x08MenuItem\x12\x0e\n\x06itemID\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\npriceCents\x18\x03 \x01(\x03\"/\n\nDineInInfo\x12\r\n\x05table\x18\x01 \x01(\x05\x12\x12\n\nguestCount\x18\x02 \x01(\x05\"#\n\x0bTakeOutInfo\x12\x14\n\x0c\x63ustomerName\x18\x01 \x01(\t\"(\n\tOrderLine\x12\x0e\n\x06itemID\x18\x01 \x01(\t\x12\x0b\n\x03qty\x18\x02 \x01(\x05\"\xd6\x01\n\x12OrderSubmitRequest\x12#\n\x04type\x18\x01 \x01(\x0e\x32\x15.restaurant.OrderType\x12\x11\n\trequestId\x18\x02 \x01(\t\x12(\n\x06\x64ineIn\x18\x03 \x01(\x0b\x32\x16.restaurant.DineInInfoH\x00\x12*\n\x07takeOut\x18\x04 \x01(\x0b\x32\x17.restaurant.TakeOutInfoH\x00\x12$\n\x05lines\x18\x05 \x03(\x0b\x32\x15.restaurant.OrderLineB\x0c\n\norder_info\"?\n\x08\x42illLine\x12\x0e\n\x06itemID\x18\x01 \x01(\t\x12\x0b\n\x03qty\x18\x02 \x01(\x05\x12\x16\n\x0elineTotalCents\x18\x03 \x01(\x03\"B\n\x04\x42ill\x12#\n\x05lines\x18\x01 \x03(\x0b\x32\x14.restaurant.BillLine\x12\x15\n\rsubtotalCents\x18\x02 \x01(\x03\"F\n\x13OrderSubmitResponse\x12\x0f\n\x07orderID\x18\x01 \x01(\t\x12\x1e\n\x04\x62ill\x18\x02 \x01(\x0b\x32\x10.restaurant.Bill\"\x83\x01\n\x0bOrderRecord\x12\x0f\n\x07orderID\x18\x01 \x01(\t\x12#\n\x04type\x18\x02 \x01(\x0e\x32\x15.restaurant.OrderType\x12\'\n\x06status\x18\x03 \x01(\x0e\x32\x17.restaurant.OrderStatus\x12\x15\n\rsubtotalCents\x18\x04 \x01(\x03\"\x12\n\x10OrderListRequest\"<\n\x11OrderListResponse\x12\'\n\x06orders\x18\x01 \x03(\x0b\x32\x17.restaurant.OrderRecord\"\'\n\x12KitchenListRequest\x12\x11\n\tkitchenId\x18\x01 \x01(\t\"\xd2\x01\n\rKitchenTicket\x12\x10\n\x08ticketId\x18\x01 \x01(\t\x12\x0f\n\x07orderId\x18\x02 \x01(\t\x12(\n\torderType\x18\x03 \x01(\x0e\x32\x15.restaurant.OrderType\x12\r\n\x05table\x18\x04 \x01(\x05\x12\x12\n\nguestCount\x18\x05 \x01(\x05\x12\x14\n\x0c\x63ustomerName\x18\x06 \x01(\t\x12$\n\x05lines\x18\x07 \x03(\x0b\x32\x15.restaurant.OrderLine\x12\x15\n\rsubtotalCents\x18\x08 \x01(\x03\"A\n\x13KitchenListResponse\x12*\n\x07tickets\x18\x01 \x03(\x0b\x32\x19.restaurant.KitchenTicket\"8\n\x11KitchenAckRequest\x12\x10\n\x08ticketId\x18\x01 \x01(\t\x12\x11\n\tkitchenId\x18\x02 \x01(\t\" \n\x12KitchenAckResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"$\n\x11OrderReadyRequest\x12\x0f\n\x07orderId\x18\x01 \x01(\t\" \n\x12OrderReadyResponse\x12\n\n\x02ok\x18\x01 \x01(\x08*B\n\x04Role\x12\x14\n\x10ROLE_UNSPECIFIED\x10\x00\x12\x0b\n\x07MANAGER\x10\x01\x12\n\n\x06SERVER\x10\x02\x12\x0b\n\x07KITCHEN\x10\x03*Z\n\x10MenuCategoryName\x12\x13\n\x0f\x43\x41T_UNSPECIFIED\x10\x00\x12\x0c\n\x08STARTERS\x10\x01\x12\t\n\x05MAINS\x10\x02\x12\x0c\n\x08\x44\x45SSERTS\x10\x03\x12\n\n\x06\x44RINKS\x10\x04*=\n\tOrderType\x12\x15\n\x11ORDER_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x44INE_IN\x10\x01\x12\x0c\n\x08TAKE_OUT\x10\x02*N\n\x0bOrderStatus\x12\x16\n\x12STATUS_UNSPECIFIED\x10\x00\x12\x07\n\x03NEW\x10\x01\x12\x13\n\x0fSENT_TO_KITCHEN\x10\x02\x12\t\n\x05READY\x10\x03\x32\x91\x01\n\x0b\x41uthService\x12\x41\n\x0c\x41uthenticate\x12\x17.restaurant.AuthRequest\x1a\x18.restaurant.AuthResponse\x12?\n\x06Logout\x12\x19.restaurant.LogoutRequest\x1a\x1a.restaurant.LogoutResponse2\x9e\x01\n\x0bMenuService\x12\x42\n\x07GetMenu\x12\x1a.restaurant.MenuGetRequest\x1a\x1b.restaurant.MenuGetResponse\x12K\n\nUpdateMenu\x12\x1d.restaurant.MenuUpdateRequest\x1a\x1e.restaurant.MenuUpdateResponse2\xa9\x01\n\x0cOrderService\x12N\n\x0bSubmitOrder\x12\x1e.restaurant.OrderSubmitRequest\x1a\x1f.restaurant.OrderSubmitResponse\x12I\n\nListOrders\x12\x1c.restaurant.OrderListRequest\x1a\x1d.restaurant.OrderListResponse2\x8c\x02\n\x0eKitchenService\x12T\n\x11ListActiveTickets\x12\x1e.restaurant.KitchenListRequest\x1a\x1f.restaurant.KitchenListResponse\x12Q\n\x10NotifyOrderReady\x12\x1d.restaurant.OrderReadyRequest\x1a\x1e.restaurant.OrderReadyResponse\x12Q\n\x10\x41\x63kKitchenTicket\x12\x1d.restaurant.KitchenAckRequest\x1a\x1e.restaurant.KitchenAckResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'restaurant_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ROLE']._serialized_start=1200
-  _globals['_ROLE']._serialized_end=1253
-  _globals['_MENUCATEGORYNAME']._serialized_start=1255
-  _globals['_MENUCATEGORYNAME']._serialized_end=1345
-  _globals['_ORDERTYPE']._serialized_start=1347
-  _globals['_ORDERTYPE']._serialized_end=1408
+  _globals['_ROLE']._serialized_start=1901
+  _globals['_ROLE']._serialized_end=1967
+  _globals['_MENUCATEGORYNAME']._serialized_start=1969
+  _globals['_MENUCATEGORYNAME']._serialized_end=2059
+  _globals['_ORDERTYPE']._serialized_start=2061
+  _globals['_ORDERTYPE']._serialized_end=2122
+  _globals['_ORDERSTATUS']._serialized_start=2124
+  _globals['_ORDERSTATUS']._serialized_end=2202
   _globals['_AUTHREQUEST']._serialized_start=32
   _globals['_AUTHREQUEST']._serialized_end=79
   _globals['_AUTHRESPONSE']._serialized_start=81
@@ -73,10 +75,32 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_BILL']._serialized_end=1126
   _globals['_ORDERSUBMITRESPONSE']._serialized_start=1128
   _globals['_ORDERSUBMITRESPONSE']._serialized_end=1198
-  _globals['_AUTHSERVICE']._serialized_start=1411
-  _globals['_AUTHSERVICE']._serialized_end=1556
-  _globals['_MENUSERVICE']._serialized_start=1559
-  _globals['_MENUSERVICE']._serialized_end=1717
-  _globals['_ORDERSERVICE']._serialized_start=1719
-  _globals['_ORDERSERVICE']._serialized_end=1813
+  _globals['_ORDERRECORD']._serialized_start=1201
+  _globals['_ORDERRECORD']._serialized_end=1332
+  _globals['_ORDERLISTREQUEST']._serialized_start=1334
+  _globals['_ORDERLISTREQUEST']._serialized_end=1352
+  _globals['_ORDERLISTRESPONSE']._serialized_start=1354
+  _globals['_ORDERLISTRESPONSE']._serialized_end=1414
+  _globals['_KITCHENLISTREQUEST']._serialized_start=1416
+  _globals['_KITCHENLISTREQUEST']._serialized_end=1455
+  _globals['_KITCHENTICKET']._serialized_start=1458
+  _globals['_KITCHENTICKET']._serialized_end=1668
+  _globals['_KITCHENLISTRESPONSE']._serialized_start=1670
+  _globals['_KITCHENLISTRESPONSE']._serialized_end=1735
+  _globals['_KITCHENACKREQUEST']._serialized_start=1737
+  _globals['_KITCHENACKREQUEST']._serialized_end=1793
+  _globals['_KITCHENACKRESPONSE']._serialized_start=1795
+  _globals['_KITCHENACKRESPONSE']._serialized_end=1827
+  _globals['_ORDERREADYREQUEST']._serialized_start=1829
+  _globals['_ORDERREADYREQUEST']._serialized_end=1865
+  _globals['_ORDERREADYRESPONSE']._serialized_start=1867
+  _globals['_ORDERREADYRESPONSE']._serialized_end=1899
+  _globals['_AUTHSERVICE']._serialized_start=2205
+  _globals['_AUTHSERVICE']._serialized_end=2350
+  _globals['_MENUSERVICE']._serialized_start=2353
+  _globals['_MENUSERVICE']._serialized_end=2511
+  _globals['_ORDERSERVICE']._serialized_start=2514
+  _globals['_ORDERSERVICE']._serialized_end=2683
+  _globals['_KITCHENSERVICE']._serialized_start=2686
+  _globals['_KITCHENSERVICE']._serialized_end=2954
 # @@protoc_insertion_point(module_scope)

@@ -269,12 +269,23 @@ class OrderServiceStub(object):
                 request_serializer=restaurant__pb2.OrderSubmitRequest.SerializeToString,
                 response_deserializer=restaurant__pb2.OrderSubmitResponse.FromString,
                 _registered_method=True)
+        self.ListOrders = channel.unary_unary(
+                '/restaurant.OrderService/ListOrders',
+                request_serializer=restaurant__pb2.OrderListRequest.SerializeToString,
+                response_deserializer=restaurant__pb2.OrderListResponse.FromString,
+                _registered_method=True)
 
 
 class OrderServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def SubmitOrder(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListOrders(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -287,6 +298,11 @@ def add_OrderServiceServicer_to_server(servicer, server):
                     servicer.SubmitOrder,
                     request_deserializer=restaurant__pb2.OrderSubmitRequest.FromString,
                     response_serializer=restaurant__pb2.OrderSubmitResponse.SerializeToString,
+            ),
+            'ListOrders': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListOrders,
+                    request_deserializer=restaurant__pb2.OrderListRequest.FromString,
+                    response_serializer=restaurant__pb2.OrderListResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -316,6 +332,191 @@ class OrderService(object):
             '/restaurant.OrderService/SubmitOrder',
             restaurant__pb2.OrderSubmitRequest.SerializeToString,
             restaurant__pb2.OrderSubmitResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListOrders(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/restaurant.OrderService/ListOrders',
+            restaurant__pb2.OrderListRequest.SerializeToString,
+            restaurant__pb2.OrderListResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+
+class KitchenServiceStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.ListActiveTickets = channel.unary_unary(
+                '/restaurant.KitchenService/ListActiveTickets',
+                request_serializer=restaurant__pb2.KitchenListRequest.SerializeToString,
+                response_deserializer=restaurant__pb2.KitchenListResponse.FromString,
+                _registered_method=True)
+        self.NotifyOrderReady = channel.unary_unary(
+                '/restaurant.KitchenService/NotifyOrderReady',
+                request_serializer=restaurant__pb2.OrderReadyRequest.SerializeToString,
+                response_deserializer=restaurant__pb2.OrderReadyResponse.FromString,
+                _registered_method=True)
+        self.AckKitchenTicket = channel.unary_unary(
+                '/restaurant.KitchenService/AckKitchenTicket',
+                request_serializer=restaurant__pb2.KitchenAckRequest.SerializeToString,
+                response_deserializer=restaurant__pb2.KitchenAckResponse.FromString,
+                _registered_method=True)
+
+
+class KitchenServiceServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def ListActiveTickets(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NotifyOrderReady(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AckKitchenTicket(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_KitchenServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'ListActiveTickets': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListActiveTickets,
+                    request_deserializer=restaurant__pb2.KitchenListRequest.FromString,
+                    response_serializer=restaurant__pb2.KitchenListResponse.SerializeToString,
+            ),
+            'NotifyOrderReady': grpc.unary_unary_rpc_method_handler(
+                    servicer.NotifyOrderReady,
+                    request_deserializer=restaurant__pb2.OrderReadyRequest.FromString,
+                    response_serializer=restaurant__pb2.OrderReadyResponse.SerializeToString,
+            ),
+            'AckKitchenTicket': grpc.unary_unary_rpc_method_handler(
+                    servicer.AckKitchenTicket,
+                    request_deserializer=restaurant__pb2.KitchenAckRequest.FromString,
+                    response_serializer=restaurant__pb2.KitchenAckResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'restaurant.KitchenService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('restaurant.KitchenService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class KitchenService(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def ListActiveTickets(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/restaurant.KitchenService/ListActiveTickets',
+            restaurant__pb2.KitchenListRequest.SerializeToString,
+            restaurant__pb2.KitchenListResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NotifyOrderReady(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/restaurant.KitchenService/NotifyOrderReady',
+            restaurant__pb2.OrderReadyRequest.SerializeToString,
+            restaurant__pb2.OrderReadyResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AckKitchenTicket(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/restaurant.KitchenService/AckKitchenTicket',
+            restaurant__pb2.KitchenAckRequest.SerializeToString,
+            restaurant__pb2.KitchenAckResponse.FromString,
             options,
             channel_credentials,
             insecure,

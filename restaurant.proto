@@ -1,9 +1,10 @@
 syntax = "proto3";
 package restaurant;
 
-enum Role { ROLE_UNSPECIFIED = 0; MANAGER = 1; SERVER = 2; }
+enum Role { ROLE_UNSPECIFIED = 0; MANAGER = 1; SERVER = 2; KITCHEN = 3; }
 enum MenuCategoryName { CAT_UNSPECIFIED = 0; STARTERS = 1; MAINS = 2; DESSERTS = 3; DRINKS = 4; }
 enum OrderType { ORDER_UNSPECIFIED = 0; DINE_IN = 1; TAKE_OUT = 2; }
+enum OrderStatus { STATUS_UNSPECIFIED = 0; NEW = 1; SENT_TO_KITCHEN = 2; READY = 3; }
 
 service AuthService {
   rpc Authenticate(AuthRequest) returns (AuthResponse);
@@ -17,6 +18,7 @@ service MenuService {
 
 service OrderService {
   rpc SubmitOrder(OrderSubmitRequest) returns (OrderSubmitResponse);
+  rpc ListOrders(OrderListRequest) returns (OrderListResponse);
 }
 
 message AuthRequest { string userID = 1; string password = 2; }
@@ -58,3 +60,40 @@ message BillLine { string itemID = 1; int32 qty = 2; int64 lineTotalCents = 3; }
 message Bill { repeated BillLine lines = 1; int64 subtotalCents = 2; }
 
 message OrderSubmitResponse { string orderID = 1; Bill bill = 2; }
+
+message OrderRecord {
+  string orderID = 1;
+  OrderType type = 2;
+  OrderStatus status = 3;
+  int64 subtotalCents = 4;
+}
+message OrderListRequest {}
+message OrderListResponse { repeated OrderRecord orders = 1; }
+
+service KitchenService {
+  rpc ListActiveTickets(KitchenListRequest) returns (KitchenListResponse);
+  rpc NotifyOrderReady(OrderReadyRequest) returns (OrderReadyResponse);
+  rpc AckKitchenTicket(KitchenAckRequest) returns (KitchenAckResponse);
+}
+
+message KitchenListRequest { string kitchenId = 1; }
+
+message KitchenTicket {
+  string ticketId = 1;
+  string orderId = 2;
+  OrderType orderType = 3;
+
+  int32 table = 4;
+  int32 guestCount = 5;
+  string customerName = 6;
+
+  repeated OrderLine lines = 7;
+  int64 subtotalCents = 8;
+}
+
+message KitchenListResponse { repeated KitchenTicket tickets = 1; }
+
+message KitchenAckRequest { string ticketId = 1; string kitchenId = 2; }
+message KitchenAckResponse { bool ok = 1; }
+message OrderReadyRequest { string orderId = 1; }
+message OrderReadyResponse { bool ok = 1; }

@@ -1,49 +1,70 @@
 from concurrent import futures
-import time
 import uuid
+from typing import Dict
+
 import grpc
 
 import restaurant_pb2 as pb
 import restaurant_pb2_grpc as pb_grpc
 import storage
 
-# In-memory auth token map (token -> role)
-TOKENS = {}
+TOKENS: Dict[str, int] = {}
+ACTIVE_TICKETS: Dict[str, pb.KitchenTicket] = {}
+ORDER_INDEX: Dict[str, pb.OrderRecord] = {}
 
-def _role_str_to_enum(role: str) -> pb.Role:
+def role_str_to_enum(role: str) -> pb.Role:
     if role == "MANAGER":
         return pb.MANAGER
     if role == "SERVER":
         return pb.SERVER
+    if role == "KITCHEN":
+        return pb.KITCHEN
     return pb.ROLE_UNSPECIFIED
 
-def _require_manager(context: grpc.ServicerContext) -> None:
+def get_role_from_context(context: grpc.ServicerContext) -> pb.Role:
     md = dict(context.invocation_metadata())
     token = md.get("authtoken", "")
     role = TOKENS.get(token)
+    if not role:
+        context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing/invalid authToken")
+    return role
+
+def require_manager(context: grpc.ServicerContext) -> None:
+    role = get_role_from_context(context)
     if role != pb.MANAGER:
         context.abort(grpc.StatusCode.PERMISSION_DENIED, "Manager role required")
 
+def require_server(context: grpc.ServicerContext) -> None:
+    role = get_role_from_context(context)
+    if role not in (pb.MANAGER, pb.SERVER):
+        context.abort(grpc.StatusCode.PERMISSION_DENIED, "Server or Manager role required")
+
+def require_kitchen(context: grpc.ServicerContext) -> None:
+    role = get_role_from_context(context)
+    if role != pb.KITCHEN:
+        context.abort(grpc.StatusCode.PERMISSION_DENIED, "Kitchen role required")
+
 class AuthService(pb_grpc.AuthServiceServicer):
-    def Authenticate(self, request: pb.AuthRequest, context):
+    def Authenticate(self, request: pb.AuthRequest, context: grpc.ServicerContext) -> pb.AuthResponse:
         user = storage.get_user(request.userID)
         if not user or user["password"] != request.password:
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid credentials")
 
         token = str(uuid.uuid4())
-        role_enum = _role_str_to_enum(user["role"])
+        role_enum = role_str_to_enum(user["role"])
         TOKENS[token] = role_enum
         return pb.AuthResponse(authToken=token, role=role_enum)
 
-    def Logout(self, request: pb.LogoutRequest, context):
+    def Logout(self, request: pb.LogoutRequest, context: grpc.ServicerContext) -> pb.LogoutResponse:
         md = dict(context.invocation_metadata())
         token = md.get("authtoken", "")
-        if token in TOKENS:
-            del TOKENS[token]
+        TOKENS.pop(token, None)
         return pb.LogoutResponse(ok=True)
 
 class MenuService(pb_grpc.MenuServiceServicer):
-    def GetMenu(self, request: pb.MenuGetRequest, context):
+    def GetMenu(self, request: pb.MenuGetRequest, context: grpc.ServicerContext) -> pb.MenuGetResponse:
+        get_role_from_context(context)
+
         menu_dict = storage.get_menu_dict()
         categories = []
         for c in menu_dict.get("categories", []):
@@ -55,8 +76,8 @@ class MenuService(pb_grpc.MenuServiceServicer):
 
         return pb.MenuGetResponse(menu=pb.Menu(categories=categories))
 
-    def UpdateMenu(self, request: pb.MenuUpdateRequest, context):
-        _require_manager(context)
+    def UpdateMenu(self, request: pb.MenuUpdateRequest, context: grpc.ServicerContext) -> pb.MenuUpdateResponse:
+        require_manager(context)
 
         op = request.operation.upper().strip()
         menu = storage.get_menu_dict()
@@ -66,7 +87,11 @@ class MenuService(pb_grpc.MenuServiceServicer):
         if not cat:
             return pb.MenuUpdateResponse(ok=False, error=f"Unknown category {cat_name}")
 
-        item = {"itemID": request.item.itemID, "name": request.item.name, "priceCents": int(request.item.priceCents)}
+        item = {
+            "itemID": request.item.itemID,
+            "name": request.item.name,
+            "priceCents": int(request.item.priceCents),
+        }
 
         if op == "ADD":
             if any(i["itemID"] == item["itemID"] for i in cat["items"]):
@@ -92,9 +117,11 @@ class MenuService(pb_grpc.MenuServiceServicer):
         return pb.MenuUpdateResponse(ok=True, error="")
 
 class OrderService(pb_grpc.OrderServiceServicer):
-    def SubmitOrder(self, request: pb.OrderSubmitRequest, context):
+    def SubmitOrder(self, request: pb.OrderSubmitRequest, context: grpc.ServicerContext) -> pb.OrderSubmitResponse:
+        require_server(context)
+
         menu = storage.get_menu_dict()
-        price_by_id = {}
+        price_by_id: Dict[str, int] = {}
         for c in menu.get("categories", []):
             for i in c.get("items", []):
                 price_by_id[i["itemID"]] = int(i["priceCents"])
@@ -108,31 +135,75 @@ class OrderService(pb_grpc.OrderServiceServicer):
             subtotal += line_total
             bill_lines.append(pb.BillLine(itemID=line.itemID, qty=line.qty, lineTotalCents=line_total))
 
-        order_id = f"o_{uuid.uuid4().hex[:8]}"
-        storage.append_order({
-            "orderID": order_id,
-            "type": pb.OrderType.Name(request.type),
-            "requestId": request.requestId,
-            "subtotalCents": subtotal,
-            "lines": [{"itemID": bl.itemID, "qty": bl.qty, "lineTotalCents": bl.lineTotalCents} for bl in bill_lines]
-        })
+        order_id = request.requestId if request.requestId else f"o_{uuid.uuid4().hex[:10]}"
+
+        storage.append_order(
+            {
+                "orderID": order_id,
+                "type": pb.OrderType.Name(request.type),
+                "subtotalCents": subtotal,
+                "lines": [
+                    {"itemID": bl.itemID, "qty": bl.qty, "lineTotalCents": bl.lineTotalCents}
+                    for bl in bill_lines
+                ],
+            }
+        )
+
+        ORDER_INDEX[order_id] = pb.OrderRecord(
+            orderID=order_id,
+            type=request.type,
+            status=pb.SENT_TO_KITCHEN,
+            subtotalCents=subtotal,
+        )
+
+        ticket = pb.KitchenTicket(
+            ticketId=f"t_{uuid.uuid4().hex[:10]}",
+            orderId=order_id,
+            orderType=request.type,
+            table=request.dineIn.table if request.type == pb.DINE_IN else 0,
+            guestCount=request.dineIn.guestCount if request.type == pb.DINE_IN else 0,
+            customerName=request.takeOut.customerName if request.type == pb.TAKE_OUT else "",
+            lines=[pb.OrderLine(itemID=l.itemID, qty=l.qty) for l in request.lines],
+            subtotalCents=subtotal,
+        )
+        ACTIVE_TICKETS[order_id] = ticket
 
         return pb.OrderSubmitResponse(orderID=order_id, bill=pb.Bill(lines=bill_lines, subtotalCents=subtotal))
 
+    def ListOrders(self, request: pb.OrderListRequest, context: grpc.ServicerContext) -> pb.OrderListResponse:
+        require_server(context)
+        return pb.OrderListResponse(orders=list(ORDER_INDEX.values()))
+
+class KitchenService(pb_grpc.KitchenServiceServicer):
+    def ListActiveTickets(self, request: pb.KitchenListRequest, context: grpc.ServicerContext) -> pb.KitchenListResponse:
+        require_kitchen(context)
+        return pb.KitchenListResponse(tickets=list(ACTIVE_TICKETS.values()))
+
+    def NotifyOrderReady(self, request: pb.OrderReadyRequest, context: grpc.ServicerContext) -> pb.OrderReadyResponse:
+        require_kitchen(context)
+        oid = request.orderId
+        rec = ORDER_INDEX.get(oid)
+        if rec:
+            rec.status = pb.READY
+            ORDER_INDEX[oid] = rec
+        ACTIVE_TICKETS.pop(oid, None)
+        return pb.OrderReadyResponse(ok=True)
+
+    def AckKitchenTicket(self, request: pb.KitchenAckRequest, context: grpc.ServicerContext) -> pb.KitchenAckResponse:
+        require_kitchen(context)
+        return pb.KitchenAckResponse(ok=True)
+
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(thread_pool=futures.ThreadPoolExecutor(max_workers=10))
     pb_grpc.add_AuthServiceServicer_to_server(AuthService(), server)
     pb_grpc.add_MenuServiceServicer_to_server(MenuService(), server)
     pb_grpc.add_OrderServiceServicer_to_server(OrderService(), server)
+    pb_grpc.add_KitchenServiceServicer_to_server(KitchenService(), server)
 
     server.add_insecure_port("[::]:50051")
     server.start()
     print("gRPC server listening on :50051")
-    try:
-        while True:
-            time.sleep(3600)
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 if __name__ == "__main__":
     serve()

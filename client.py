@@ -96,7 +96,6 @@ class RestaurantClient:
         self._item_by_id: Dict[str, Tuple[str, int, int]] = {}
         self._items_by_category: Dict[int, List[Tuple[str, str, int]]] = defaultdict(list)
 
-        self._last_kitchen_id: Optional[str] = None
         self._last_active_tickets: List[pb.KitchenTicket] = []
 
     def login(self) -> None:
@@ -111,7 +110,7 @@ class RestaurantClient:
 
         self.session.token = resp.authToken
         self.session.role = resp.role
-        print(f"Logged in as {user_id} (role={role_name(resp.role)})")
+        print(f"Logged in as {user_id} ({role_name(resp.role)})")
 
     def logout(self) -> None:
         if not self.session.token:
@@ -178,17 +177,23 @@ class RestaurantClient:
         print("\nUpdateMenu requires MANAGER role on the server.")
         op = choose_from("Operation (ADD/UPDATE/DELETE): ", ["ADD", "UPDATE", "DELETE"])
 
-        cat_str = choose_from(
-            "Category (STARTERS/MAINS/DESSERTS/DRINKS): ",
-            ["STARTERS", "MAINS", "DESSERTS", "DRINKS"],
-        )
-        cat_enum = getattr(pb, cat_str)
-
-        item_id = input_nonempty("Item ID (e.g., m1): ")
+        item_id = input_nonempty("Item ID: ")
         if op == "DELETE":
             name = "DELETE"
             price = 0
-        else:
+        elif op == "UPDATE":
+            cat_enum = self._item_by_id.get(item_id)[1] if item_id in self._item_by_id else None
+            if cat_enum is None:
+                print("Unknown itemID. Use 'View Menu' to see valid IDs.")
+                return
+            name = input_nonempty("Updated item name: ")
+            price = input_int("Price in cents (e.g., 1299): ", min_value=0)
+        else: #ADD
+            cat_str = choose_from(
+                "Category (STARTERS/MAINS/DESSERTS/DRINKS): ",
+                ["STARTERS", "MAINS", "DESSERTS", "DRINKS"],
+            )
+            cat_enum = getattr(pb, cat_str)
             name = input_nonempty("Item name: ")
             price = input_int("Price in cents (e.g., 1299): ", min_value=0)
 
@@ -221,24 +226,13 @@ class RestaurantClient:
             return self.refresh_menu_cache()
         return True
 
-    def _choose_item_from_category(self, cat_enum: int) -> str:
-        items = self._items_by_category.get(int(cat_enum), [])
-        if not items:
-            raise RuntimeError(f"No items available in category {category_name(cat_enum)}")
-
-        while True:
-            item_id = input_nonempty(f"Enter {category_name(cat_enum)} itemID: ")
-            if item_id in self._item_by_id and self._item_by_id[item_id][1] == int(cat_enum):
-                return item_id
-            print("Invalid itemID for this category. Try again.")
-
     def _choose_item_from_category_or_skip(self, cat_enum: int) -> Optional[str]:
         items = self._items_by_category.get(int(cat_enum), [])
         if not items:
             return None
 
         while True:
-            s = input(f"Enter {category_name(cat_enum)} itemID (blank to skip): ").strip()
+            s = input(f"Enter {category_name(cat_enum)} itemID: ").strip()
             if s == "":
                 return None
             item_id = s
@@ -259,7 +253,7 @@ class RestaurantClient:
         if not self._ensure_menu_loaded():
             return
 
-        request_id = gen_request_id("dinein")
+        request_id = gen_request_id("dine-in")
 
         table = input_int("Table number: ", min_value=1, max_value=1)
         guest_count = input_int("Guest count: ", min_value=1, max_value=4)
@@ -299,8 +293,7 @@ class RestaurantClient:
 
         name = input_nonempty("Customer name: ")
 
-        print("\nEnter take-out items one per line as: itemID qty")
-        print("Press Enter on blank line when done.\n")
+        print("Enter take-out items one per line as: itemID qty")
 
         lines: List[pb.OrderLine] = []
         total_qty = 0
@@ -368,7 +361,7 @@ class RestaurantClient:
 
         self._ensure_menu_loaded()
 
-        print(f"\nOrder submitted! orderID={resp.orderID}")
+        print(f"\nOrder submitted! {resp.orderID}")
         print("Bill:")
         bill_qty: Dict[str, int] = defaultdict(int)
         bill_total: Dict[str, int] = defaultdict(int)
@@ -404,7 +397,7 @@ class RestaurantClient:
                 tname = pb.OrderType.Name(o.type)
             except Exception:
                 tname = str(o.type)
-            print(f"{o.orderID}  type={tname:<8}  status={status_name(o.status):<16}  subtotal={money_from_cents(o.subtotalCents)}")
+            print(f"{o.orderID}  {tname:<8}  {status_name(o.status):<16}  Subtotal: {money_from_cents(o.subtotalCents)}")
         print("==================\n")
 
     def kitchen_list_active_tickets(self) -> None:
@@ -414,8 +407,7 @@ class RestaurantClient:
         if not self._ensure_menu_loaded():
             return
 
-        kitchen_id = input_nonempty("Kitchen ID (e.g., kitchen): ")
-        self._last_kitchen_id = kitchen_id
+        kitchen_id = f"kitchen_{self.session.token}"
 
         try:
             resp = self.kitchen.ListActiveTickets(
@@ -443,8 +435,7 @@ class RestaurantClient:
         if not self._ensure_menu_loaded():
             return
 
-        kitchen_id = self._last_kitchen_id or input_nonempty("Kitchen ID (e.g., kitchen): ")
-        self._last_kitchen_id = kitchen_id
+        kitchen_id = f"kitchen_{self.session.token}"
 
         def refresh() -> List[pb.KitchenTicket]:
             try:
@@ -472,9 +463,8 @@ class RestaurantClient:
             print("\n--- Active Tickets ---")
             for i, t in enumerate(tickets, start=1):
                 print(f"{i}) {self._ticket_summary_line(t)}")
-            print("r) Refresh")
-            print("v) View a ticket")
-            print("q) Back")
+            print("V) View a ticket")
+            print("Q) Exit to main menu")
 
             choice = input("Select ticket # to mark READY: ").strip().lower()
             if choice in ("q", ""):
@@ -507,7 +497,7 @@ class RestaurantClient:
                 continue
 
             if resp.ok:
-                print(f"Marked READY: orderId={t.orderId}")
+                print(f"Marked READY: {t.orderId}")
                 tickets.pop(idx - 1)
                 self._last_active_tickets = tickets
             else:
@@ -515,22 +505,22 @@ class RestaurantClient:
 
     def _ticket_summary_line(self, t: pb.KitchenTicket) -> str:
         parts: List[str] = []
-        parts.append(f"orderId={t.orderId}")
+        parts.append(f"Order: {t.orderId}")
         try:
-            parts.append(f"type={pb.OrderType.Name(t.orderType)}")
+            parts.append(f"{pb.OrderType.Name(t.orderType)}")
         except Exception:
-            parts.append(f"type={t.orderType}")
+            parts.append(f"{t.orderType}")
         if t.orderType == pb.DINE_IN:
-            parts.append(f"table={t.table}")
-            parts.append(f"guests={t.guestCount}")
+            parts.append(f"Table: {t.table}")
+            parts.append(f"Guests: {t.guestCount}")
         elif t.orderType == pb.TAKE_OUT:
             if getattr(t, "customerName", ""):
-                parts.append(f"customer={t.customerName}")
+                parts.append(f"Customer: {t.customerName}")
 
         combined: Dict[str, int] = defaultdict(int)
         for l in t.lines:
             combined[l.itemID] += int(l.qty)
-        parts.append(f"items={sum(combined.values())}")
+        parts.append(f"Items: {sum(combined.values())}")
         return "  ".join(parts)
 
     def _print_ticket(self, t: pb.KitchenTicket) -> None:
@@ -539,18 +529,17 @@ class RestaurantClient:
             combined[l.itemID] += int(l.qty)
 
         print("===== KITCHEN TICKET =====")
-        print(f"ticketId: {t.ticketId}")
-        print(f"orderId : {t.orderId}")
+        print(f"Order: {t.orderId}")
         try:
-            print(f"type    : {pb.OrderType.Name(t.orderType)}")
+            print(f"Type    : {pb.OrderType.Name(t.orderType)}")
         except Exception:
-            print(f"type    : {t.orderType}")
+            print(f"Type    : {t.orderType}")
 
         if t.orderType == pb.DINE_IN:
-            print(f"table   : {t.table}")
-            print(f"guests  : {t.guestCount}")
+            print(f"Table   : {t.table}")
+            print(f"Guests  : {t.guestCount}")
         elif t.orderType == pb.TAKE_OUT:
-            print(f"customer: {t.customerName}")
+            print(f"Customer: {t.customerName}")
 
         print("Items:")
         for item_id in sorted(combined.keys()):
@@ -559,7 +548,7 @@ class RestaurantClient:
 
 
 def main() -> int:
-    print("ECE 470 Restaurant Client (Interactive)")
+    print("ECE 470 Restaurant Client")
     addr = DEFAULT_ADDR
     session = Session(addr=addr)
     client = RestaurantClient(session)

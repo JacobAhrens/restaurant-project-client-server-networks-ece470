@@ -26,39 +26,46 @@ def get_role_from_context(context: grpc.ServicerContext) -> pb.Role:
     token = md.get("authtoken", "")
     role = TOKENS.get(token)
     if not role:
+        print(f"Unauthenticated access attempt with token: {token}")
         context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing/invalid authToken")
     return role
 
 def require_manager(context: grpc.ServicerContext) -> None:
     role = get_role_from_context(context)
     if role != pb.MANAGER:
+        print(f"Unauthorized manager access attempt with role {role}")
         context.abort(grpc.StatusCode.PERMISSION_DENIED, "Manager role required")
 
 def require_server(context: grpc.ServicerContext) -> None:
     role = get_role_from_context(context)
     if role not in (pb.MANAGER, pb.SERVER):
+        print(f"Unauthorized server access attempt with role {role}")
         context.abort(grpc.StatusCode.PERMISSION_DENIED, "Server or Manager role required")
 
 def require_kitchen(context: grpc.ServicerContext) -> None:
     role = get_role_from_context(context)
     if role != pb.KITCHEN:
+        print(f"Unauthorized kitchen access attempt with role {role}")
         context.abort(grpc.StatusCode.PERMISSION_DENIED, "Kitchen role required")
 
 class AuthService(pb_grpc.AuthServiceServicer):
     def Authenticate(self, request: pb.AuthRequest, context: grpc.ServicerContext) -> pb.AuthResponse:
         user = storage.get_user(request.userID)
         if not user or user["password"] != request.password:
+            print(f"Failed login attempt for userID: {request.userID}")
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid credentials")
 
         token = str(uuid.uuid4())
         role_enum = role_str_to_enum(user["role"])
         TOKENS[token] = role_enum
+        print(f"User {request.userID} authenticated with role {user['role']} and token {token}")
         return pb.AuthResponse(authToken=token, role=role_enum)
 
     def Logout(self, request: pb.LogoutRequest, context: grpc.ServicerContext) -> pb.LogoutResponse:
         md = dict(context.invocation_metadata())
         token = md.get("authtoken", "")
         TOKENS.pop(token, None)
+        print(f"User logged out with token: {token}")
         return pb.LogoutResponse(ok=True)
 
 class MenuService(pb_grpc.MenuServiceServicer):
@@ -73,7 +80,7 @@ class MenuService(pb_grpc.MenuServiceServicer):
                 for i in c.get("items", [])
             ]
             categories.append(pb.MenuCategory(name=getattr(pb, c["name"]), items=items))
-
+        print(f"Menu retrieved for role {get_role_from_context(context)}")
         return pb.MenuGetResponse(menu=pb.Menu(categories=categories))
 
     def UpdateMenu(self, request: pb.MenuUpdateRequest, context: grpc.ServicerContext) -> pb.MenuUpdateResponse:
@@ -85,6 +92,7 @@ class MenuService(pb_grpc.MenuServiceServicer):
         cat_name = pb.MenuCategoryName.Name(request.category)
         cat = next((c for c in menu["categories"] if c["name"] == cat_name), None)
         if not cat:
+            print(f"Menu UPDATE failed: Unknown category {cat_name}")
             return pb.MenuUpdateResponse(ok=False, error=f"Unknown category {cat_name}")
 
         item = {
@@ -95,12 +103,14 @@ class MenuService(pb_grpc.MenuServiceServicer):
 
         if op == "ADD":
             if any(i["itemID"] == item["itemID"] for i in cat["items"]):
+                print(f"Menu ADD failed: Item with ID {item['itemID']} already exists in category {cat_name}")
                 return pb.MenuUpdateResponse(ok=False, error="itemID already exists")
             cat["items"].append(item)
 
         elif op == "UPDATE":
             existing = next((i for i in cat["items"] if i["itemID"] == item["itemID"]), None)
             if not existing:
+                print(f"Menu UPDATE failed: Item with ID {item['itemID']} not found in category {cat_name}")
                 return pb.MenuUpdateResponse(ok=False, error="itemID not found")
             existing.update(item)
 
@@ -108,12 +118,15 @@ class MenuService(pb_grpc.MenuServiceServicer):
             before = len(cat["items"])
             cat["items"] = [i for i in cat["items"] if i["itemID"] != item["itemID"]]
             if len(cat["items"]) == before:
+                print(f"Menu DELETE failed: Item with ID {item['itemID']} not found in category {cat_name}")
                 return pb.MenuUpdateResponse(ok=False, error="itemID not found")
 
         else:
+            print(f"Menu UPDATE failed: Invalid operation {op}")
             return pb.MenuUpdateResponse(ok=False, error="operation must be ADD/UPDATE/DELETE")
 
         storage.save_menu_dict(menu)
+        print(f"Menu updated with operation {op} on itemID {item['itemID']} in category {cat_name} by manager")
         return pb.MenuUpdateResponse(ok=True, error="")
 
 class OrderService(pb_grpc.OrderServiceServicer):
@@ -167,16 +180,18 @@ class OrderService(pb_grpc.OrderServiceServicer):
             subtotalCents=subtotal,
         )
         ACTIVE_TICKETS[order_id] = ticket
-
+        print(f"Order submitted with ID {order_id} and type {request.type}")
         return pb.OrderSubmitResponse(orderID=order_id, bill=pb.Bill(lines=bill_lines, subtotalCents=subtotal))
 
     def ListOrders(self, request: pb.OrderListRequest, context: grpc.ServicerContext) -> pb.OrderListResponse:
         require_server(context)
+        print(f"Orders listed for role {get_role_from_context(context)}")
         return pb.OrderListResponse(orders=list(ORDER_INDEX.values()))
 
 class KitchenService(pb_grpc.KitchenServiceServicer):
     def ListActiveTickets(self, request: pb.KitchenListRequest, context: grpc.ServicerContext) -> pb.KitchenListResponse:
         require_kitchen(context)
+        print(f"Active kitchen tickets requested and sent")
         return pb.KitchenListResponse(tickets=list(ACTIVE_TICKETS.values()))
 
     def NotifyOrderReady(self, request: pb.OrderReadyRequest, context: grpc.ServicerContext) -> pb.OrderReadyResponse:
@@ -187,10 +202,12 @@ class KitchenService(pb_grpc.KitchenServiceServicer):
             rec.status = pb.READY
             ORDER_INDEX[oid] = rec
         ACTIVE_TICKETS.pop(oid, None)
+        print(f"Order notified as ready with ID {oid}")
         return pb.OrderReadyResponse(ok=True)
 
     def AckKitchenTicket(self, request: pb.KitchenAckRequest, context: grpc.ServicerContext) -> pb.KitchenAckResponse:
         require_kitchen(context)
+        print(f"Kitchen ticket acknowledged with ID {request.ticketId}")
         return pb.KitchenAckResponse(ok=True)
 
 def serve():

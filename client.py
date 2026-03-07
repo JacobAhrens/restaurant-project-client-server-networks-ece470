@@ -179,6 +179,7 @@ class RestaurantClient:
 
         item_id = input_nonempty("Item ID: ")
         if op == "DELETE":
+            cat_enum = self._item_by_id.get(item_id)[1] if item_id in self._item_by_id else None
             name = "DELETE"
             price = 0
         elif op == "UPDATE":
